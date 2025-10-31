@@ -1,0 +1,15 @@
+theme = "github_light"
+
+[editor]
+line-number = "relative"
+mouse = false
+scrolloff = 3
+continue-comments = false
+rulers = [80]
+bufferline = "always"
+trim-final-newlines = true
+trim-trailing-whitespace = true
+end-of-line-diagnostics = "hint"
+
+[editor.inline-diagnostics]
+cursor-line = "warning"
