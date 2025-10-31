@@ -4,9 +4,13 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # Rust completions
 . "$HOME/.cargo/env"
 
-# OpenMP & C
-export LDFLAGS="-L/opt/homebrew/opt/libomp/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/libomp/include"
+# OpenMP
+export OpenMP_ROOT=$(/opt/homebrew/bin/brew --prefix)/opt/libomp
+export CPPFLAGS="-I${OpenMP_ROOT}/include"
+export LDFLAGS="$LDFLAGS -L${OpenMP_ROOT}/lib"
+
+# SDL and other libs for easy linking
+export LIBRARY_PATH="$LIBRARY_PATH:$(/opt/homebrew/bin/brew --prefix)/lib"
 
 # local::lib
 if [ -d ~/perl5 ]; then
