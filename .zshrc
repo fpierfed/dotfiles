@@ -120,3 +120,8 @@ zstyle ':completion:*' list-colors
 if [ -f ~/.alias ]; then
     . ~/.alias
 fi
+
+# bk completion
+if [ -f /usr/local/bin/bk ]; then
+    source <(/usr/local/bin/bk completion zsh)
+fi
