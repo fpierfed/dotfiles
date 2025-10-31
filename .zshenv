@@ -1,10 +1,6 @@
 # local stuff
 export PATH=/usr/local/bin:$PATH
 
-# OpenMP
-export LDFLAGS="-L/opt/homebrew/opt/libomp/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/libomp/include"
-
 # local git tree
 if [ -d ~/git_tree ]; then
     export GIT_TREE="$HOME/git_tree"
