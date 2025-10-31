@@ -109,9 +109,14 @@ export LC_ALL=en_US.UTF-8
 umask 022
 export EDITOR=nvim
 
-# Nike all ls colors!
+# Nuke all ls colors!
 export LS_COLORS=""
 
-# Remove directory highlight/background color on tab 
+# Remove directory highlight/background color on tab
 # remove ls highlight color
 zstyle ':completion:*' list-colors
+
+# Source aliases
+if [ -f ~/.alias ]; then
+    . ~/.alias
+fi
