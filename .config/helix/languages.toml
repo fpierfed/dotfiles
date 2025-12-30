@@ -10,3 +10,9 @@ name = "python"
 language-servers = [ "basedpyright" ]
 formatter = { command = "ruff", args = ["format", "--line-length", "79", "-"] }
 auto-format = true
+
+[[language]]
+name = "ada"
+rulers = [79]
+formatter = { command = "gnatformat" , args = ["--pipe", "%sh{pwd}/%{buffer_name}"] }
+auto-format = true
