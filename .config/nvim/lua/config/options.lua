@@ -11,5 +11,4 @@ vim.opt.mousescroll = "ver:0,hor:0"
 vim.opt.sidescrolloff = 0
 vim.opt.sidescroll = 0
 
--- Disable autopairs (via mini.nvim / mini.pairs)
-vim.b.minipairs_disable = true
+-- Autopairs disabled in lua/plugins/mini-pairs.lua
