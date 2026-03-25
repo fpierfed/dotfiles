@@ -1,7 +1,7 @@
 -- Disable mini.pairs auto-pairing
 return {
   {
-    "mvim-mini/mini",
+    "mvim-mini/mini.pairs",
     enabled = false,
   },
 }
