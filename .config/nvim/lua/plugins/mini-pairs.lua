@@ -1,7 +1,7 @@
 -- Disable mini.pairs auto-pairing
 return {
   {
-    "echasnovski/mini.pairs",
+    "mvim-mini/mini",
     enabled = false,
   },
 }
