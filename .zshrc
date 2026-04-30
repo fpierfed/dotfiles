@@ -127,3 +127,19 @@ fi
 if [ -f /usr/local/bin/bk ]; then
     source <(/usr/local/bin/bk completion zsh)
 fi
+
+# Ensure virtualenv is shown in the prompt for new shells spawned in a project dir.
+# The activate script's PS1 modification gets overwritten by the OMZ theme at startup,
+# so we handle it via precmd instead.
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+function _venv_prompt_precmd {
+  if [[ -n "$VIRTUAL_ENV" ]]; then
+    PROMPT="(%{$fg[green]%}${VIRTUAL_ENV:t}%{$reset_color%}) %{$fg[$NCOLOR]%}%c ➤ %{$reset_color%}"
+  else
+    PROMPT="%{$fg[$NCOLOR]%}%c ➤ %{$reset_color%}"
+  fi
+}
+add-zsh-hook precmd _venv_prompt_precmd
+
+# Added by Windsurf
+export PATH="/Users/fpierfederic/.codeium/windsurf/bin:$PATH"
