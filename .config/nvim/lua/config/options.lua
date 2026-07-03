@@ -4,6 +4,9 @@
 vim.g.lazyvim_python_lsp = "basedpyright"
 vim.g.lazyvim_python_ruff = "ruff"
 
+-- Bacon support for rust
+vim.g.lazyvim_rust_diagnostics = "bacon-ls"
+
 -- Disable mouse mode
 vim.opt.mouse = ""
 vim.opt.mousescroll = "ver:0,hor:0"
