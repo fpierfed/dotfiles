@@ -14,4 +14,7 @@ vim.opt.mousescroll = "ver:0,hor:0"
 vim.opt.sidescrolloff = 0
 vim.opt.sidescroll = 0
 
+-- Keep the current-line number highlighted, but no background on the line itself.
+vim.opt.cursorlineopt = "number"
+
 -- Autopairs disabled in lua/plugins/mini-pairs.lua

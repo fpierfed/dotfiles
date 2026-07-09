@@ -20,15 +20,22 @@ end
 
 return {
   "saghen/blink.cmp",
-  opts = {
-    enabled = function()
+  -- Function form: lazy.nvim *concatenates* list fields when merging opts tables,
+  -- which would re-add "buffer". Assigning inside a function replaces it cleanly.
+  opts = function(_, opts)
+    -- Drop the "buffer" source (word-scraping from open buffers); keep semantic sources only.
+    opts.sources = opts.sources or {}
+    opts.sources.default = { "lsp", "path", "snippets" }
+
+    opts.enabled = function()
       local ft = vim.bo.filetype
       if ft == "markdown" or ft == "text" then
         return false
       end
       return not in_comment()
-    end,
-    completion = {
+    end
+
+    opts.completion = vim.tbl_deep_extend("force", opts.completion or {}, {
       list = {
         max_items = 10,
       },
@@ -50,6 +57,6 @@ return {
         show_without_selection = true,
         show_with_menu = false,
       },
-    },
-  },
+    })
+  end,
 }
