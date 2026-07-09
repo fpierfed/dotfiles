@@ -25,7 +25,7 @@ return {
   opts = function(_, opts)
     -- Drop the "buffer" source (word-scraping from open buffers); keep semantic sources only.
     opts.sources = opts.sources or {}
-    opts.sources.default = { "lsp", "path", "snippets" }
+    opts.sources.default = { "lsp", "path" }
 
     opts.enabled = function()
       local ft = vim.bo.filetype
