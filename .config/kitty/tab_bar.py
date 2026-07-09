@@ -25,17 +25,29 @@ REFRESH_INTERVAL = 1.0  # seconds between clock redraws
 BATTERY_REFRESH_TICKS = 30  # redraws between (slow) pmset calls
 
 _timer_id = None
-_battery_cache = {'text': '', 'ticks': 0}
+_battery_cache = ''
+_battery_skipped = 1
 
 
 def _read_battery() -> str:
     """Return e.g. '87%' or '⚡87%' when charging. '' if unavailable."""
+
+    global _battery_cache, _battery_skipped
+
+    # Not that we read the battery every N refreshes to avoid the sys call.
+    if _battery_skipped < BATTERY_REFRESH_TICKS:
+        _battery_skipped += 1
+        return _battery_cache
+    else:
+        _battery_skipped = 1
+
     try:
         out = subprocess.check_output(
             ['pmset', '-g', 'batt'], text=True, timeout=1.0
         )
     except Exception:
-        return ''
+        return _battery_cache
+
     pct = ''
     charging = False
     for line in out.splitlines():
@@ -49,8 +61,10 @@ def _read_battery() -> str:
         )
         break
     if not pct:
-        return ''
-    return ('⚡' + pct) if charging else pct
+        return _battery_cache
+
+    _battery_cache = ('⚡' + pct) if charging else pct
+    return _battery_cache
 
 
 def _status_text() -> str:
