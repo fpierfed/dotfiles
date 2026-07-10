@@ -3,11 +3,12 @@
 #
 # Enabled via `tab_bar_style custom` in kitty.conf. kitty imports this file
 # and calls draw_tab() for each tab. We piggyback on the last tab to draw the
-# right-hand status, and use a 1s timer to keep the clock live.
+# right-hand status, and use a timer to keep the clock live.
 
 import datetime
 import os
-import subprocess
+import sys
+import time
 
 from kitty.boss import get_boss
 from kitty.fast_data_types import add_timer, wcswidth
@@ -21,62 +22,68 @@ from kitty.tab_bar import (
 )
 from kitty.utils import color_as_int
 
+CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
+if CONFIG_DIR not in sys.path:
+    sys.path.insert(0, CONFIG_DIR)
+from macos_system_status import (
+    battery_status,
+    cpu_utilization_percent,
+    memory_status,
+)
+
 REFRESH_INTERVAL = 1.0  # seconds between clock redraws
-BATTERY_REFRESH_TICKS = 30  # redraws between (slow) pmset calls
+CPU_REFRESH_INTERVAL = 5.0  # seconds between system-status samples
 
 _timer_id = None
-_battery_cache = ''
-_battery_skipped = 1
+_cpu_cache = None
+_cpu_cache_time = 0.0
 
 
-def _read_battery() -> str:
-    """Return e.g. '87%' or '⚡87%' when charging. '' if unavailable."""
+def _cached_cpu_status() -> dict | None:
+    global _cpu_cache, _cpu_cache_time
 
-    global _battery_cache, _battery_skipped
-
-    # Not that we read the battery every N refreshes to avoid the sys call.
-    if _battery_skipped < BATTERY_REFRESH_TICKS:
-        _battery_skipped += 1
-        return _battery_cache
-    else:
-        _battery_skipped = 1
+    now = time.monotonic()
+    if _cpu_cache is not None and now - _cpu_cache_time < CPU_REFRESH_INTERVAL:
+        return _cpu_cache
 
     try:
-        out = subprocess.check_output(
-            ['pmset', '-g', 'batt'], text=True, timeout=1.0
-        )
+        _cpu_cache = cpu_utilization_percent(interval=0)
     except Exception:
-        return _battery_cache
-
-    pct = ''
-    charging = False
-    for line in out.splitlines():
-        if '%' not in line:
-            continue
-        for token in line.replace(';', ' ').split():
-            if token.endswith('%'):
-                pct = token
-        charging = 'discharging' not in line and (
-            'charging' in line or 'charged' in line
-        )
-        break
-    if not pct:
-        return _battery_cache
-
-    _battery_cache = ('⚡' + pct) if charging else pct
-    return _battery_cache
+        _cpu_cache = None
+    _cpu_cache_time = now
+    return _cpu_cache
 
 
 def _status_text() -> str:
     now = datetime.datetime.now()
+    status = {
+        'cpu_utilization_percent': _cached_cpu_status(),
+        **memory_status(),
+        'battery': battery_status(),
+    }
     parts = []
-    try:
-        parts.append('load %.2f' % os.getloadavg()[0])
-    except OSError:
-        pass
-    bat = _read_battery()
-    if bat:
-        parts.append(bat)
+
+    if status is not None:
+        cpu_pct = status['cpu_utilization_percent']
+        mem_free = status['memory_free_percent']
+        # mem_pr = status['memory_pressure_percent']
+        # mem_pr_active = status['memory_pressure_active']
+        battery = status.get('battery') or {}
+        bat_pct = battery.get('charge_percent')
+        bat_charging = battery.get('is_charging')
+
+        parts.extend(
+            [
+                f'CPU: {cpu_pct:.0f}%',
+                f'MEM: {mem_free}% free',
+            ]
+        )
+        if bat_pct is not None:
+            bat_text = f'{bat_pct:.0f}%'
+            parts.append(
+                'BAT: ' + (('⚡' + bat_text) if bat_charging else bat_text)
+            )
+
     parts.append(now.strftime('%d %b %Y'))
     parts.append(now.strftime('%H:%M'))
     return ' | '.join(parts) + ' '

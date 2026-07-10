@@ -44,11 +44,10 @@ def _cpu_ticks() -> list[int]:
     return list(ticks)
 
 
-def cpu_utilization_percent(interval: float = 1.0) -> float:
-    before = _cpu_ticks()
-    time.sleep(interval)
-    after = _cpu_ticks()
+_LAST_CPU_TICKS: list[int] | None = None
 
+
+def _cpu_utilization_from_ticks(before: list[int], after: list[int]) -> float:
     deltas = [(a - b) & 0xFFFFFFFF for a, b in zip(after, before)]
     total = sum(deltas)
 
@@ -56,6 +55,27 @@ def cpu_utilization_percent(interval: float = 1.0) -> float:
         return 0.0
 
     return 100.0 * (total - deltas[CPU_STATE_IDLE]) / total
+
+
+def cpu_utilization_percent(interval: float = 1.0) -> float:
+    global _LAST_CPU_TICKS
+
+    if interval <= 0:
+        after = _cpu_ticks()
+        before = _LAST_CPU_TICKS
+        _LAST_CPU_TICKS = after
+
+        if before is None:
+            return 0.0
+
+        return _cpu_utilization_from_ticks(before, after)
+
+    before = _cpu_ticks()
+    time.sleep(interval)
+    after = _cpu_ticks()
+    _LAST_CPU_TICKS = after
+
+    return _cpu_utilization_from_ticks(before, after)
 
 
 # Memory
