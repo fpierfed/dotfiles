@@ -29,6 +29,7 @@ from macos_system_status import (
     battery_status,
     cpu_utilization_percent,
     memory_status,
+    stock_status,
 )
 
 REFRESH_INTERVAL = 1.0  # seconds between clock redraws
@@ -52,6 +53,34 @@ def _cached_cpu_status() -> dict | None:
         _cpu_cache = None
     _cpu_cache_time = now
     return _cpu_cache
+
+
+def _stock_text() -> str | None:
+    """BKNG price with its 1 week and 1 month moves, or None until it arrives.
+
+    blocking=False keeps the network off this code path: the quote is fetched on a
+    background thread and picked up by a later redraw.
+    """
+    try:
+        quote = stock_status(blocking=False)
+    except Exception:
+        return None
+
+    price = (quote or {}).get('price')
+    if price is None:
+        return None
+
+    moves = []
+    for label, key in (('1w', 'week_change_percent'), ('1m', 'month_change_percent')):
+        percent = quote.get(key)
+        if percent is not None:
+            moves.append(f'{label} {percent:+.1f}%')
+
+    text = f"{quote.get('symbol') or 'BKNG'} {price:,.2f}"
+    if moves:
+        text += ' (' + ' · '.join(moves) + ')'
+
+    return text
 
 
 def _status_text() -> str:
@@ -83,6 +112,10 @@ def _status_text() -> str:
             parts.append(
                 'BAT: ' + (('⚡' + bat_text) if bat_charging else bat_text)
             )
+
+    stock = _stock_text()
+    if stock is not None:
+        parts.append(stock)
 
     parts.append(now.strftime('%d %b %Y'))
     parts.append(now.strftime('%H:%M'))
