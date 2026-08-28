@@ -5,10 +5,8 @@
 # and calls draw_tab() for each tab. We piggyback on the last tab to draw the
 # right-hand status, and use a timer to keep the clock live.
 
-import datetime
 import os
 import sys
-import time
 
 from kitty.boss import get_boss
 from kitty.fast_data_types import add_timer, wcswidth
@@ -25,101 +23,10 @@ from kitty.utils import color_as_int
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 if CONFIG_DIR not in sys.path:
     sys.path.insert(0, CONFIG_DIR)
-from macos_system_status import (
-    battery_status,
-    cpu_utilization_percent,
-    memory_status,
-    stock_status,
-)
+import status
 
 REFRESH_INTERVAL = 1.0  # seconds between clock redraws
-CPU_REFRESH_INTERVAL = 5.0  # seconds between system-status samples
-
 _timer_id = None
-_cpu_cache = None
-_cpu_cache_time = 0.0
-
-
-def _cached_cpu_status() -> dict | None:
-    global _cpu_cache, _cpu_cache_time
-
-    now = time.monotonic()
-    if _cpu_cache is not None and now - _cpu_cache_time < CPU_REFRESH_INTERVAL:
-        return _cpu_cache
-
-    try:
-        _cpu_cache = cpu_utilization_percent(interval=0)
-    except Exception:
-        _cpu_cache = None
-    _cpu_cache_time = now
-    return _cpu_cache
-
-
-def _stock_text() -> str | None:
-    """BKNG price with its 1 week and 1 month moves, or None until it arrives.
-
-    blocking=False keeps the network off this code path: the quote is fetched on a
-    background thread and picked up by a later redraw.
-    """
-    try:
-        quote = stock_status(blocking=False)
-    except Exception:
-        return None
-
-    price = (quote or {}).get('price')
-    if price is None:
-        return None
-
-    moves = []
-    for label, key in (('1w', 'week_change_percent'), ('1m', 'month_change_percent')):
-        percent = quote.get(key)
-        if percent is not None:
-            moves.append(f'{label} {percent:+.1f}%')
-
-    text = f"{quote.get('symbol') or 'BKNG'} {price:,.2f}"
-    if moves:
-        text += ' (' + ' · '.join(moves) + ')'
-
-    return text
-
-
-def _status_text() -> str:
-    now = datetime.datetime.now()
-    status = {
-        'cpu_utilization_percent': _cached_cpu_status(),
-        **memory_status(),
-        'battery': battery_status(),
-    }
-    parts = []
-
-    if status is not None:
-        cpu_pct = status['cpu_utilization_percent']
-        mem_free = status['memory_free_percent']
-        # mem_pr = status['memory_pressure_percent']
-        # mem_pr_active = status['memory_pressure_active']
-        battery = status.get('battery') or {}
-        bat_pct = battery.get('charge_percent')
-        bat_charging = battery.get('is_charging')
-
-        parts.extend(
-            [
-                f'CPU: {cpu_pct:.0f}%',
-                f'MEM: {mem_free}% free',
-            ]
-        )
-        if bat_pct is not None:
-            bat_text = f'{bat_pct:.0f}%'
-            parts.append(
-                'BAT: ' + (('⚡' + bat_text) if bat_charging else bat_text)
-            )
-
-    stock = _stock_text()
-    if stock is not None:
-        parts.append(stock)
-
-    parts.append(now.strftime('%d %b %Y'))
-    parts.append(now.strftime('%H:%M'))
-    return ' | '.join(parts) + ' '
 
 
 def _redraw_tab_bar(_id) -> None:
@@ -129,7 +36,7 @@ def _redraw_tab_bar(_id) -> None:
 
 
 def _draw_right_status(draw_data: DrawData, screen: Screen) -> None:
-    text = _status_text()
+    text = status.status_text()
     width = wcswidth(text)
     start = screen.columns - width
     if start <= screen.cursor.x:  # not enough room; skip
