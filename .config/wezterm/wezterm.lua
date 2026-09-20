@@ -14,6 +14,15 @@ config.color_scheme = "Github (base16)"
 
 config.quit_when_all_windows_are_closed = false
 
+config.audible_bell = "Disabled"
+config.visual_bell = {
+	fade_in_function = "EaseIn",
+	fade_in_duration_ms = 100,
+}
+config.colors = {
+	visual_bell = "#f00000",
+}
+
 config.keys = {
 	-- macos line movements
 	{ key = "RightArrow", mods = "OPT", action = act({ SendString = "\x1bf" }) },
